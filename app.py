@@ -7,10 +7,10 @@ import base64
 import time
 from datetime import datetime # Added datetime import
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from models.agent import get_finance_agent_executor
 from models.llm import get_vision_response
-from utils.rag_logic import process_and_store_pdf
+from utils.rag_logic import process_and_store_pdf, sync_knowledge_base, KNOWLEDGE_BASE_DIR, INDEXED_FILES_TRACKER
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -479,14 +479,12 @@ def main():
             # Sync Knowledge Base on first run
             if "kb_synced" not in st.session_state:
                 with st.spinner("Syncing Knowledge Base..."):
-                    from utils.rag_logic import sync_knowledge_base, KNOWLEDGE_BASE_DIR, INDEXED_FILES_TRACKER
                     count, msg = sync_knowledge_base()
                     st.session_state.kb_synced = True
                     if count > 0:
                         st.success(msg)
             
             # Display KB Stats
-            from utils.rag_logic import KNOWLEDGE_BASE_DIR, INDEXED_FILES_TRACKER
             kb_files = [f for f in os.listdir(KNOWLEDGE_BASE_DIR) if f.lower().endswith(".pdf")] if os.path.exists(KNOWLEDGE_BASE_DIR) else []
             indexed_count = 0
             if os.path.exists(INDEXED_FILES_TRACKER):
@@ -497,7 +495,6 @@ def main():
             
             if st.button("🔄 Refresh Library", use_container_width=True):
                 with st.spinner("Indexing new documents..."):
-                    from utils.rag_logic import sync_knowledge_base
                     count, msg = sync_knowledge_base()
                     if count > 0:
                         st.success(msg)
