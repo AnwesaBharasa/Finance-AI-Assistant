@@ -15,11 +15,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 VECTOR_STORE_PATH = os.path.join(os.path.dirname(__file__), "faiss_index")
+KNOWLEDGE_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../knowledge_base"))
+INDEXED_FILES_TRACKER = os.path.join(VECTOR_STORE_PATH, "indexed_files.txt")
 
-def process_and_store_pdf(file_path: str):
+def process_and_store_pdf(file_path: str, is_permanent: bool = False):
     """Load uploaded PDFs, chunk + embed text, store vector DB (persist locally)"""
     try:
-        logger.info(f"Processing PDF: {file_path}")
+        file_name = os.path.basename(file_path)
+        logger.info(f"Processing PDF: {file_name}")
+        
         # Load PDF
         loader = PyPDFLoader(file_path)
         documents = loader.load()
@@ -45,13 +49,48 @@ def process_and_store_pdf(file_path: str):
             vector_store = FAISS.from_documents(chunks, embeddings)
             
         # Persist locally
+        os.makedirs(VECTOR_STORE_PATH, exist_ok=True)
         vector_store.save_local(VECTOR_STORE_PATH)
-        logger.info("Successfully persisted vector store.")
-        return True, "Successfully processed and stored PDF."
+        
+        # Track indexed file
+        with open(INDEXED_FILES_TRACKER, "a") as f:
+            f.write(f"{file_name}\n")
+            
+        logger.info(f"Successfully persisted vector store for {file_name}.")
+        return True, f"Successfully indexed {file_name}."
     except Exception as e:
-        error_msg = f"Error processing PDF: {str(e)}"
+        error_msg = f"Error processing {os.path.basename(file_path)}: {str(e)}"
         logger.error(error_msg)
         return False, error_msg
+
+def sync_knowledge_base():
+    """Sync all PDFs from knowledge_base directory into the vector store."""
+    if not os.path.exists(KNOWLEDGE_BASE_DIR):
+        os.makedirs(KNOWLEDGE_BASE_DIR)
+        return 0, "Created empty knowledge_base directory."
+        
+    # Get already indexed files
+    indexed_files = set()
+    if os.path.exists(INDEXED_FILES_TRACKER):
+        with open(INDEXED_FILES_TRACKER, "r") as f:
+            indexed_files = {line.strip() for line in f if line.strip()}
+            
+    files_to_sync = [f for f in os.listdir(KNOWLEDGE_BASE_DIR) if f.lower().endswith(".pdf") and f not in indexed_files]
+    
+    count = 0
+    errors = []
+    
+    for file_name in files_to_sync:
+        file_path = os.path.join(KNOWLEDGE_BASE_DIR, file_name)
+        success, msg = process_and_store_pdf(file_path, is_permanent=True)
+        if success:
+            count += 1
+        else:
+            errors.append(msg)
+            
+    if errors:
+        return count, f"Synced {count} files. Errors: {'; '.join(errors)}"
+    return count, f"Knowledge Base Synchronized: {count} new files added."
 
 class RagSearchInput(BaseModel):
     query: str = Field(description="The specific search query to look up in the uploaded financial documents.")

@@ -4,6 +4,7 @@ import sys
 import tempfile
 import logging
 import base64
+import time
 from datetime import datetime # Added datetime import
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -41,8 +42,8 @@ def get_chat_response(agent_executor, query):
         return error_msg, []
 
 def login_page():
-    st.markdown("<h2 style='text-align: center; color: #1E3A8A; margin-top: 100px;'>🔐 Secure Portal Login</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #6B7280;'>Authenticate to access the Upgraded Phase 3 AI Assistant</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>🔐 Secure Portal Login</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; opacity: 0.8;'>Authenticate to access the Upgraded Phase 3 AI Assistant</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -61,7 +62,7 @@ def login_page():
 
 def instructions_page():
     """Instructions and setup page"""
-    st.title("💰 Agentic Finance AI Assistant")
+    st.header("💰 Agentic Finance AI Assistant")
     st.markdown("Welcome! Follow these instructions to set up and use the chatbot.")
     
     st.markdown("""
@@ -314,7 +315,7 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Custom CSS Injection
+    # Custom CSS Injection for Modern, Responsive UI
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
@@ -323,31 +324,41 @@ def main():
         font-family: 'Inter', sans-serif;
     }
     
+    /* Adapt backgrounds using theme variables */
     .stApp {
-        background-color: #F3F4F6;
+        background-color: var(--background-color);
     }
     
     [data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        border-right: 1px solid #E5E7EB;
+        background-color: var(--secondary-background-color);
+        border-right: 1px solid rgba(128, 128, 128, 0.1);
     }
     
-    /* Modern Chat Bubbles */
+    /* Modern Glassmorphism-style Chat Bubbles */
     [data-testid="stChatMessage"] {
-        background-color: #FFFFFF !important;
+        background-color: var(--secondary-background-color) !important;
         border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         padding: 1rem;
         margin-bottom: 1rem;
-        border: 1px solid #E5E7EB;
+        border: 1px solid rgba(128, 128, 128, 0.2);
     }
     
-    /* Buttons */
+    /* Premium Button Styling */
     .stButton>button {
-        background-color: #1E3A8A;
-        color: white;
+        background-color: #1E3A8A; /* Kept as primary color */
+        color: white !important;
         border-radius: 8px;
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    
+    .stButton>button:hover {
+        background-color: #2563EB;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
         padding: 0.5rem 1rem;
         font-weight: 500;
         transition: all 0.2s;
@@ -463,10 +474,43 @@ def main():
                 st.session_state.current_image_base64 = None
                         
             st.divider()
+            st.subheader("📚 Permanent Knowledge Base")
+            
+            # Sync Knowledge Base on first run
+            if "kb_synced" not in st.session_state:
+                with st.spinner("Syncing Knowledge Base..."):
+                    from utils.rag_logic import sync_knowledge_base, KNOWLEDGE_BASE_DIR, INDEXED_FILES_TRACKER
+                    count, msg = sync_knowledge_base()
+                    st.session_state.kb_synced = True
+                    if count > 0:
+                        st.success(msg)
+            
+            # Display KB Stats
+            from utils.rag_logic import KNOWLEDGE_BASE_DIR, INDEXED_FILES_TRACKER
+            kb_files = [f for f in os.listdir(KNOWLEDGE_BASE_DIR) if f.lower().endswith(".pdf")] if os.path.exists(KNOWLEDGE_BASE_DIR) else []
+            indexed_count = 0
+            if os.path.exists(INDEXED_FILES_TRACKER):
+                with open(INDEXED_FILES_TRACKER, "r") as f:
+                    indexed_count = len([line for line in f if line.strip()])
+            
+            st.info(f"📁 **{len(kb_files)}** PDFs in `knowledge_base/` folder.\n\n🔍 **{indexed_count}** documents currently indexed.")
+            
+            if st.button("🔄 Refresh Library", use_container_width=True):
+                with st.spinner("Indexing new documents..."):
+                    from utils.rag_logic import sync_knowledge_base
+                    count, msg = sync_knowledge_base()
+                    if count > 0:
+                        st.success(msg)
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.toast("Library is already up to date!")
+            
+            st.divider()
             st.subheader("📊 Chat Management")
             
             # Export Chat Feature
-            if st.session_state.messages:
+            if "messages" in st.session_state and st.session_state.messages:
                 chat_text = ""
                 for msg in st.session_state.messages:
                     role = "User" if msg["role"] == "user" else "Assistant"
