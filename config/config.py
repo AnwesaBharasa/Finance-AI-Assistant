@@ -14,6 +14,8 @@ class Config:
     MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
+    DEMO_USERNAME = os.getenv("DEMO_USERNAME", "demo")
+    DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "demo123")
     
     # Model Selection
     MODEL_NAME = "mistral-small-latest"

@@ -55,18 +55,30 @@ def login_page():
     with col2:
         with st.form("login_form"):
             st.markdown("### 🔐 Authentication")
+            st.markdown("<p style='text-align: center; font-size: 0.9rem; opacity: 0.7;'>Use <b>demo/demo123</b> or continue as guest</p>", unsafe_allow_html=True)
             username = st.text_input("Username", placeholder="Enter your username")
             password = st.text_input("Password", type="password", placeholder="Enter your password")
             submit = st.form_submit_button("Access Terminal", use_container_width=True)
             
             if submit:
-                if username.strip().lower() == Config.ADMIN_USERNAME.lower() and password == Config.ADMIN_PASSWORD:
-                    st.session_state.logged_in = True
+                # Check Admin or Demo credentials
+                is_admin = (username.strip().lower() == Config.ADMIN_USERNAME.lower() and password == Config.ADMIN_PASSWORD)
+                is_demo = (username.strip().lower() == Config.DEMO_USERNAME.lower() and password == Config.DEMO_PASSWORD)
+                
+                if is_admin or is_demo:
+                    st.session_state.authenticated = True
                     st.success("Access Granted.")
                     time.sleep(1)
                     st.rerun()
                 else:
                     st.error("Authentication Failed.")
+        
+        # Guest Access Button outside the form
+        if st.button("🔓 Continue as Guest", use_container_width=True):
+            st.session_state.authenticated = True
+            st.toast("Welcome! Accessing as Guest.")
+            time.sleep(1)
+            st.rerun()
 
 def instructions_page():
     """Instructions and setup page with clean layout"""
@@ -473,7 +485,11 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    if not st.session_state.get("logged_in", False):
+    # Initialize authentication state
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    
+    if not st.session_state.authenticated:
         login_page()
         return
         
