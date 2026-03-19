@@ -12,6 +12,8 @@ class Config:
     TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
     
     # Model Selection
     MODEL_NAME = "mistral-small-latest"

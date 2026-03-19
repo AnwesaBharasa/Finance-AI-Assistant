@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from models.agent import get_finance_agent_executor
 from models.llm import get_vision_response
 from utils.rag_logic import process_and_store_pdf, sync_knowledge_base, KNOWLEDGE_BASE_DIR, INDEXED_FILES_TRACKER
+from config.config import Config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -59,7 +60,7 @@ def login_page():
             submit = st.form_submit_button("Access Terminal", use_container_width=True)
             
             if submit:
-                if username.strip().lower() == "admin" and password == "admin":
+                if username.strip().lower() == Config.ADMIN_USERNAME.lower() and password == Config.ADMIN_PASSWORD:
                     st.session_state.logged_in = True
                     st.success("Access Granted.")
                     time.sleep(1)
