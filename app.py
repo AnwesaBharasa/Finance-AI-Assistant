@@ -26,6 +26,17 @@ def get_chat_response(agent_executor, query):
     try:
         response = agent_executor.invoke({"input": query})
         output = response.get("output", str(response))
+        
+        # Handle cases where output is a list of content blocks (common in some LangChain versions)
+        if isinstance(output, list):
+            clean_output = ""
+            for block in output:
+                if isinstance(block, str):
+                    clean_output += block
+                elif isinstance(block, dict) and "text" in block:
+                    clean_output += block["text"]
+            output = clean_output if clean_output else str(output)
+
         steps = response.get("intermediate_steps", [])
         
         json_steps = []
