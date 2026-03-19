@@ -8,6 +8,8 @@ from utils.budget_tool import plan_budget
 from utils.investment_tool import recommend_investment
 from utils.tax_tool import calculate_tax_optimization
 from utils.market_tool import get_stock_price
+from utils.calculator_fd import calculate_fd
+from utils.currency_tool import convert_currency
 from utils.rag_logic import rag_search_tool
 from utils.search_logic import get_web_search_tool
 
@@ -20,6 +22,8 @@ def get_document_tools():
         recommend_investment,
         calculate_tax_optimization,
         get_stock_price,
+        calculate_fd,
+        convert_currency,
         rag_search_tool()
     ]
 
@@ -32,5 +36,7 @@ def get_web_tools():
         recommend_investment,
         calculate_tax_optimization,
         get_stock_price,
+        calculate_fd,
+        convert_currency,
         get_web_search_tool()
     ]

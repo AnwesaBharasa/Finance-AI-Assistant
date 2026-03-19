@@ -4,6 +4,7 @@ import sys
 import tempfile
 import logging
 import base64
+from datetime import datetime # Added datetime import
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from models.agent import get_finance_agent_executor
@@ -90,20 +91,31 @@ def chat_page():
     from utils.investment_tool import recommend_investment
     from utils.tax_tool import calculate_tax_optimization
     from utils.market_tool import get_stock_price
+    from utils.calculator_fd import calculate_fd
+    from utils.currency_tool import convert_currency
     
     # Quick Action Tool Selector
     st.markdown("##### ⚡ Quick Action Tools")
-    col1, col2, col3, col4, col5 = st.columns(5)
-    if col1.button("🧮 EMI Calculator", use_container_width=True):
+    row1_col1, row1_col2, row1_col3, row1_col4 = st.columns(4)
+    if row1_col1.button("🧮 EMI Calc", use_container_width=True):
         st.session_state.active_tool = "emi"
-    if col2.button("💰 Budget Planner", use_container_width=True):
+    if row1_col2.button("💰 Budget Info", use_container_width=True):
         st.session_state.active_tool = "budget"
-    if col3.button("📊 Tax Optimizer", use_container_width=True):
+    if row1_col3.button("📊 Tax Optimizer", use_container_width=True):
         st.session_state.active_tool = "tax"
-    if col4.button("📈 Investments", use_container_width=True):
+    if row1_col4.button("📈 Investments", use_container_width=True):
         st.session_state.active_tool = "invest"
-    if col5.button("📉 Live Market", use_container_width=True):
+        
+    row2_col1, row2_col2, row2_col3, row2_col4 = st.columns(4)
+    if row2_col1.button("📉 Live Market", use_container_width=True):
         st.session_state.active_tool = "market"
+    if row2_col2.button("🏦 FD Calculator", use_container_width=True):
+        st.session_state.active_tool = "fd"
+    if row2_col3.button("💱 Currency Conv", use_container_width=True):
+        st.session_state.active_tool = "currency"
+    if row2_col4.button("🧹 Clear Tool", use_container_width=True):
+        st.session_state.active_tool = None
+
     
     # Interactive Tool Panels
     active_tool = st.session_state.get("active_tool", None)
@@ -163,6 +175,42 @@ def chat_page():
             if submitted:
                 with st.spinner("Fetching live data from Yahoo Finance..."):
                     result = get_stock_price.invoke({"ticker_symbol": ticker})
+                    st.success(result)
+                    
+    elif active_tool == "fd":
+        st.markdown("### 🏦 FD Calculator")
+        with st.form("fd_form"):
+            f_col1, f_col2 = st.columns(2)
+            principal = f_col1.number_input("Principal Amount (Rs.)", min_value=1000.0, value=100000.0, step=5000.0)
+            rate = f_col2.number_input("Interest Rate (% p.a.)", min_value=1.0, value=7.0, step=0.1)
+            f_col3, f_col4 = st.columns(2)
+            tenure = f_col3.number_input("Tenure (Years)", min_value=1.0, value=5.0, step=0.5)
+            compounding = f_col4.selectbox("Compounding Frequency", ["Monthly", "Quarterly", "Half-Yearly", "Yearly"], index=1)
+            submitted = st.form_submit_button("🏦 Calculate Maturity", use_container_width=True)
+            if submitted:
+                result = calculate_fd.invoke({
+                    "principal": str(principal), 
+                    "annual_rate": str(rate), 
+                    "years": str(tenure), 
+                    "compounding_frequency": compounding.lower()
+                })
+                st.success(result)
+                
+    elif active_tool == "currency":
+        st.markdown("### 💱 Currency Converter")
+        with st.form("currency_form"):
+            c_col1, c_col2, c_col3 = st.columns(3)
+            amount = c_col1.number_input("Amount", min_value=1.0, value=100.0, step=1.0)
+            from_curr = c_col2.text_input("From (e.g. USD)", value="USD")
+            to_curr = c_col3.text_input("To (e.g. INR)", value="INR")
+            submitted = st.form_submit_button("💱 Convert Now", use_container_width=True)
+            if submitted:
+                with st.spinner("Fetching live forex rate..."):
+                    result = convert_currency.invoke({
+                        "amount": str(amount), 
+                        "from_currency": from_curr, 
+                        "to_currency": to_curr
+                    })
                     st.success(result)
     
     if active_tool:
@@ -415,11 +463,30 @@ def main():
                 st.session_state.current_image_base64 = None
                         
             st.divider()
+            st.subheader("📊 Chat Management")
+            
+            # Export Chat Feature
+            if st.session_state.messages:
+                chat_text = ""
+                for msg in st.session_state.messages:
+                    role = "User" if msg["role"] == "user" else "Assistant"
+                    chat_text += f"{role}: {msg['content']}\n\n"
+                
+                st.download_button(
+                    label="📥 Export Chat Transcript",
+                    data=chat_text,
+                    file_name=f"finance_ai_chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                    mime="text/plain",
+                    use_container_width=True
+                )
+
             if st.button("🗑️ Clear Chat History", use_container_width=True):
                 st.session_state.messages = []
                 if "agent" in st.session_state and st.session_state.agent:
                     st.session_state.agent.memory.clear()
                 st.rerun()
+            
+            st.info("💡 Tip: Use System Settings to toggle between Dark and Light mode for the best visual experience.")
     
     # Route to appropriate page
     if page == "Instructions":
