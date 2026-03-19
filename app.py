@@ -42,49 +42,67 @@ def get_chat_response(agent_executor, query):
         return error_msg, []
 
 def login_page():
-    st.markdown("<h2 style='text-align: center;'>🔐 Secure Portal Login</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; opacity: 0.8;'>Authenticate to access the Upgraded Phase 3 AI Assistant</p>", unsafe_allow_html=True)
+    # Wrap in a centered div using HTML
+    st.markdown("""
+        <div class="login-container">
+            <h1 class="header-style">NeoStats</h1>
+            <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 2rem; color: var(--text-color);">Secure AI Gateway</p>
+        </div>
+    """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submit = st.form_submit_button("Login", use_container_width=True)
+            st.markdown("### 🔐 Authentication")
+            username = st.text_input("Username", placeholder="Enter your username")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            submit = st.form_submit_button("Access Terminal", use_container_width=True)
             
             if submit:
                 if username.strip().lower() == "admin" and password == "admin":
                     st.session_state.logged_in = True
-                    st.success("Login successful!")
+                    st.success("Access Granted.")
+                    time.sleep(1)
                     st.rerun()
                 else:
-                    st.error("Invalid username or password.")
+                    st.error("Authentication Failed.")
 
 def instructions_page():
-    """Instructions and setup page"""
-    st.header("💰 Agentic Finance AI Assistant")
-    st.markdown("Welcome! Follow these instructions to set up and use the chatbot.")
+    """Instructions and setup page with clean layout"""
+    st.markdown("<h1 class='header-style'>System Instructions</h1>", unsafe_allow_html=True)
     
-    st.markdown("""
-    ## 🔧 Setup
-    
-    This Finance & Tax AI Assistant requires configuration in `config/config.py` using `.env`.
-    Ensure you have `GROQ_API_KEY` and `TAVILY_API_KEY` configured.
-    
-    ## How to Use
-    1. **Go to the Chat page** (use the navigation in the sidebar).
-    2. **Choose Search Mode**: Select 'Document Search' for strict PDF/Image domains, or 'Web Search' for real-time market news.
-    3. **Upload Files**: If in Document Search, upload a PDF or an Image!
-    4. **Ask Questions**: Ask about EMI, SIP, Budgets, Tax Regulations.
-    
-    ## Tips
-    - Document Search guarantees complete safety mapping to uploaded context.
-    - Web Search opens the model to answer market trends globally.
-    """)
+    with st.container():
+        st.markdown("""
+        ### 💰 Agentic Finance AI Assistant
+        Welcome to your premium financial workspace. Follow these protocols to maximize the agent's utility.
+        
+        ---
+        
+        #### 🔧 Core Configuration
+        This Assistant utilizes **Mistral AI** and **Pixtral** models for advanced reasoning.
+        - Ensure `MISTRAL_API_KEY` and `TAVILY_API_KEY` are active in your `.env`.
+        
+        #### 📈 Operating Protocols
+        1. **Select Search Mode**: Toggle in the sidebar.
+           - **Document Search**: Restricted to your uploaded context (PDFs/Images).
+           - **Web Search**: Open-access to global market intelligence and news.
+        2. **Multi-Source Knowledge**:
+           - **Manual Upload**: Process specific files in real-time.
+           - **Library folder**: Place permanent documents in `knowledge_base/` for persistent memory.
+        3. **Deterministic Tools**: Use precise calculators for EMI, SIP, FD, Budgets, and Tax.
+        
+        #### 💡 Best Practices
+        - Use **Document Search** for sensitive analysis of your private statements.
+        - Use **Web Search** for checking stock trends or global economic news.
+        - Toggle the **Response Mode** for deeper explanations or quick insights.
+        """)
+
 
 def chat_page():
     """Main chat interface page"""
-    st.title("💰 Agentic Finance AI Assistant")
+    st.markdown("<h1 class='header-style'>Finance AI Assistant</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; margin-top: -1.5rem; opacity: 0.7; font-weight: 600;'>Neural Analysis & Financial Intelligence</p>", unsafe_allow_html=True)
+    st.divider()
     
     # Import tools directly for interactive panels
     from utils.calculator import calculate_emi, calculate_sip
@@ -318,67 +336,138 @@ def main():
     # Custom CSS Injection for Modern, Responsive UI
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
     
-    html, body, [class*="css"] {
+    :root {
+        --primary-accent: #2563EB;
+        --secondary-accent: #4F46E5;
+        --success-green: #10B981;
+    }
+
+    /* Global Typography */
+    html, body, [class*="css"], .stMarkdown {
         font-family: 'Inter', sans-serif;
     }
     
-    /* Adapt backgrounds using theme variables */
-    .stApp {
-        background-color: var(--background-color);
+    h1, h2, h3, h4 {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700 !important;
+        letter-spacing: -0.02em;
     }
-    
+
+    /* Premium Glassmorphism Sidebar */
     [data-testid="stSidebar"] {
-        background-color: var(--secondary-background-color);
-        border-right: 1px solid rgba(128, 128, 128, 0.1);
-    }
-    
-    /* Modern Glassmorphism-style Chat Bubbles */
-    [data-testid="stChatMessage"] {
         background-color: var(--secondary-background-color) !important;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(128, 128, 128, 0.2);
+        border-right: 1px solid rgba(128, 128, 128, 0.15);
+        padding-top: 2rem;
     }
     
-    /* Premium Button Styling */
-    .stButton>button {
-        background-color: #1E3A8A; /* Kept as primary color */
-        color: white !important;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
-        font-weight: 500;
-    }
-    
-    .stButton>button:hover {
-        background-color: #2563EB;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        transition: all 0.2s;
-    }
-    
-    .stButton>button:hover {
-        background-color: #1E40AF;
-        transform: translateY(-1px);
-    }
-    
-    /* User Input */
-    [data-testid="stChatInput"] {
-        border-radius: 20px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border: 1px solid #E5E7EB;
-    }
-    
-    h1, h2, h3 {
-        color: #111827;
+    [data-testid="stSidebar"] .stRadio > label {
         font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+
+    /* Modern Chat Bubbles */
+    [data-testid="stChatMessage"] {
+        background-color: transparent !important;
+        padding: 0 !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* Style User Message Bubble */
+    [data-testid="stChatMessage"][data-test-assistant="false"] div.stChatMessageContent {
+        background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent)) !important;
+        color: white !important;
+        border-radius: 20px 20px 4px 20px !important;
+        padding: 1rem 1.25rem !important;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.15);
+        width: fit-content;
+        max-width: 80%;
+        margin-left: auto;
+    }
+
+    /* Style Assistant Message Bubble */
+    [data-testid="stChatMessage"][data-test-assistant="true"] div.stChatMessageContent {
+        background-color: var(--secondary-background-color) !important;
+        color: var(--text-color) !important;
+        border-radius: 20px 20px 20px 4px !important;
+        padding: 1rem 1.25rem !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(128, 128, 128, 0.1);
+        width: fit-content;
+        max-width: 85%;
+    }
+
+    /* Input Field Styling */
+    [data-testid="stChatInput"] {
+        border-radius: 24px !important;
+        border: 1px solid rgba(128, 128, 128, 0.2) !important;
+        background-color: var(--secondary-background-color) !important;
+        padding: 0.5rem 1rem !important;
+        box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* Premium Button Styling */
+    .stButton > button {
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-transform: none !important;
+        border: none !important;
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    /* Card Containers (for Login and Tools) */
+    .stForm, .stExpander, div.stAlert {
+        border-radius: 16px !important;
+        border: 1px solid rgba(128, 128, 128, 0.1) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03) !important;
+        background-color: var(--secondary-background-color) !important;
+    }
+
+    /* Hide standard chat icons if needed for extra clean look */
+    [data-testid="stChatMessageAvatar"] {
+        display: none !important; /* Optional: remove icon for super minimal look */
+    }
+
+    /* Login Card Specific */
+    .login-container {
+        max-width: 450px;
+        margin: 5rem auto;
+        padding: 2.5rem;
+        background-color: var(--secondary-background-color);
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(128, 128, 128, 0.1);
+        text-align: center;
+    }
+
+    .header-style {
+        background: linear-gradient(90deg, #1E3A8A, #3B82F6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 2.5rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.2);
+        border-radius: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
