@@ -8,10 +8,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from config.config import Config
 
 class WebSearchInput(BaseModel):
-    query: str = Field(description="The specific search query to look up on the web (e.g., 'current weather in London', 'current price of corn').")
+    query: str = Field(description="The specific search query to look up on the web (e.g., 'latest RBI repo rate', 'current Nifty 50 price').")
 
 def web_search(query: str) -> str:
-    """Search the web for weather, market prices, and other realtime agricultural information and return summarized results."""
+    """Search the web for financial news, market prices, and rates and return summarized results."""
     try:
         tavily_tool = TavilySearchResults(
             max_results=3,
@@ -31,7 +31,7 @@ def get_web_search_tool():
     return StructuredTool.from_function(
         func=web_search,
         name="web_search",
-        description="Search the web for live agricultural information, weather, or market prices.",
+        description="Search the web for live financial information, tax updates, or market prices.",
         args_schema=WebSearchInput
     )
     

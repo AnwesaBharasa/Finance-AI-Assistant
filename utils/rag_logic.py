@@ -4,6 +4,8 @@ import logging
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+from langchain_core.tools import StructuredTool
+from pydantic import BaseModel, Field
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from models.embeddings import get_embeddings_model
@@ -51,23 +53,35 @@ def process_and_store_pdf(file_path: str):
         logger.error(error_msg)
         return False, error_msg
 
-def retrieve_context(query: str, k: int = 3) -> str:
+class RagSearchInput(BaseModel):
+    query: str = Field(description="The specific search query to look up in the uploaded financial documents.")
+
+def rag_search(query: str) -> str:
     """Retrieve relevant chunks from the persisted FAISS vector DB."""
     try:
         if not os.path.exists(VECTOR_STORE_PATH):
             logger.info("No vector store found.")
-            return ""
+            return "This is outside my document knowledge. (No document uploaded)"
             
         embeddings = get_embeddings_model()
         vector_store = FAISS.load_local(VECTOR_STORE_PATH, embeddings, allow_dangerous_deserialization=True)
         
-        docs = vector_store.similarity_search(query, k=k)
+        docs = vector_store.similarity_search(query, k=3)
         
         if docs:
             context = "\n\n".join([doc.page_content for doc in docs])
             logger.info(f"Retrieved {len(docs)} documents for query.")
             return context
-        return ""
+        return "This is outside my document knowledge."
     except Exception as e:
         logger.error(f"Error retrieving context: {str(e)}")
-        return ""
+        return f"This is outside my document knowledge. (Error: {str(e)})"
+
+def rag_search_tool():
+    """Create and return a LangChain Tool for Document Search"""
+    return StructuredTool.from_function(
+        func=rag_search,
+        name="document_search",
+        description="Search strictly within the uploaded financial or tax documents (PDFs) for exact context. Use this for ANY domain-specific query. If the query is outside the document domain, the tool will explicitly state 'This is outside my document knowledge'.",
+        args_schema=RagSearchInput
+    )
