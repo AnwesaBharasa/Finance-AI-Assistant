@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 VECTOR_STORE_PATH = os.path.join(os.path.dirname(__file__), "faiss_index")
-KNOWLEDGE_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../knowledge_base"))
+KNOWLEDGE_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../knowledge_base"))
 INDEXED_FILES_TRACKER = os.path.join(VECTOR_STORE_PATH, "indexed_files.txt")
 
 def process_and_store_pdf(file_path: str, is_permanent: bool = False):
