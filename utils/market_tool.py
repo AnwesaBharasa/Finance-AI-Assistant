@@ -6,6 +6,19 @@ def get_stock_price(ticker_symbol: str) -> str:
     """Fetches live stock/index price, 52-week range, and key metrics for a given ticker symbol. Use '^NSEI' for Nifty 50, '^BSESN' for Sensex, or company tickers like 'RELIANCE.NS', 'TCS.NS', 'INFY.NS'."""
     try:
         ticker_symbol = str(ticker_symbol).strip().upper()
+        
+        # Normalize Indian Stock Exchange prefixes (NSE: -> .NS, BSE: -> .BO)
+        if ":" in ticker_symbol:
+            parts = ticker_symbol.split(":")
+            exchange = parts[0]
+            base_ticker = parts[1]
+            if exchange == "NSE":
+                ticker_symbol = f"{base_ticker}.NS"
+            elif exchange == "BSE":
+                ticker_symbol = f"{base_ticker}.BO"
+        elif " " in ticker_symbol: # Handle "TATA STEEL" cases by checking first part
+            ticker_symbol = ticker_symbol.split(" ")[0] + ".NS"
+
         stock = yf.Ticker(ticker_symbol)
         info = stock.info
 
