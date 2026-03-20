@@ -86,8 +86,10 @@ def login_page():
         </div>
     """, unsafe_allow_html=True)
     
-    # Choice between Login and Sign Up
-    auth_mode = st.radio("Choose Mode", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
+    # Choice between Login and Sign Up (Centered)
+    _, radio_col, _ = st.columns([1.5, 2, 1])
+    with radio_col:
+        auth_mode = st.radio("Choose Mode", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
