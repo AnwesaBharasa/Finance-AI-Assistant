@@ -7,3 +7,4 @@ utils/faiss_index/
 *.log
 tmp/
 .ipynb_checkpoints/
+data.json
