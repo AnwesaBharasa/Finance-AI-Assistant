@@ -105,7 +105,11 @@ def rag_search(query: str) -> str:
         embeddings = get_embeddings_model()
         vector_store = FAISS.load_local(VECTOR_STORE_PATH, embeddings, allow_dangerous_deserialization=True)
         
-        docs = vector_store.similarity_search(query, k=3)
+        # If the query is likely a summarization request, provide more context
+        is_summary = any(word in query.lower() for word in ["summarize", "summary", "overview", "main points", "all about"])
+        k_val = 6 if is_summary else 4
+        
+        docs = vector_store.similarity_search(query, k=k_val)
         
         if docs:
             context = "\n\n".join([doc.page_content for doc in docs])
@@ -121,6 +125,6 @@ def rag_search_tool():
     return StructuredTool.from_function(
         func=rag_search,
         name="document_search",
-        description="Search strictly within the uploaded financial or tax documents (PDFs) for exact context. Use this for ANY domain-specific query. If the query is outside the document domain, the tool will explicitly state 'This is outside my document knowledge'.",
+        description="Search strictly within the uploaded financial or tax documents (PDFs). Use this for summarization, specific data extraction, or domain-specific questions. For summaries, call this tool with broad terms like 'main content' or 'overview'. If the tool returns 'outside knowledge', inform the user that the document doesn't contain that info.",
         args_schema=RagSearchInput
     )
