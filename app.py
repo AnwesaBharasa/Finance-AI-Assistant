@@ -12,6 +12,30 @@ from models.agent import get_finance_agent_executor
 from models.llm import get_vision_response
 from utils.rag_logic import process_and_store_pdf, sync_knowledge_base, KNOWLEDGE_BASE_DIR, INDEXED_FILES_TRACKER
 from config.config import Config
+import json
+
+USER_DATA_FILE = "data.json"
+
+def load_user_data():
+    """Load user credentials from data.json"""
+    if not os.path.exists(USER_DATA_FILE):
+        return {}
+    try:
+        with open(USER_DATA_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Error loading user data: {e}")
+        return {}
+
+def save_user_data(data):
+    """Save user credentials to data.json"""
+    try:
+        with open(USER_DATA_FILE, "w") as f:
+            json.dump(data, f, indent=4)
+        return True
+    except Exception as e:
+        logger.error(f"Error saving user data: {e}")
+        return False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -62,29 +86,56 @@ def login_page():
         </div>
     """, unsafe_allow_html=True)
     
+    # Choice between Login and Sign Up
+    auth_mode = st.radio("Choose Mode", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        with st.form("login_form"):
-            st.markdown("### 🔐 Authentication")
-            st.markdown("<p style='text-align: center; font-size: 0.9rem; opacity: 0.7;'>Use <b>demo/demo123</b> or continue as guest</p>", unsafe_allow_html=True)
-            username = st.text_input("Username", placeholder="Enter your username")
-            password = st.text_input("Password", type="password", placeholder="Enter your password")
-            submit = st.form_submit_button("Access Terminal", use_container_width=True)
-            
-            if submit:
-                # Check Admin or Demo credentials
-                is_admin = (username.strip().lower() == Config.ADMIN_USERNAME.lower() and password == Config.ADMIN_PASSWORD)
-                is_demo = (username.strip().lower() == Config.DEMO_USERNAME.lower() and password == Config.DEMO_PASSWORD)
+        if auth_mode == "Login":
+            with st.form("login_form"):
+                st.markdown("### 🔐 Sign In")
+                username = st.text_input("Username", placeholder="Enter your username")
+                password = st.text_input("Password", type="password", placeholder="Enter your password")
+                submit = st.form_submit_button("Access Terminal", use_container_width=True)
                 
-                if is_admin or is_demo:
-                    st.session_state.authenticated = True
-                    st.success("Access Granted.")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error("Authentication Failed.")
-        
-        # Guest Access Button outside the form
+                if submit:
+                    user_data = load_user_data()
+                    is_admin = (username.strip().lower() == Config.ADMIN_USERNAME.lower() and password == Config.ADMIN_PASSWORD)
+                    is_valid_user = username in user_data and user_data[username] == password
+                    
+                    if is_admin or is_valid_user:
+                        st.session_state.authenticated = True
+                        st.success(f"Welcome back, {username}!")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("Invalid Username or Password.")
+        else:
+            with st.form("signup_form"):
+                st.markdown("### 📝 Create Account")
+                new_user = st.text_input("New Username", placeholder="Choose a username")
+                new_pass = st.text_input("New Password", type="password", placeholder="Choose a password")
+                confirm_pass = st.text_input("Confirm Password", type="password")
+                signup_submit = st.form_submit_button("Register Account", use_container_width=True)
+                
+                if signup_submit:
+                    if not new_user or not new_pass:
+                        st.warning("Please fill all fields.")
+                    elif new_pass != confirm_pass:
+                        st.error("Passwords do not match.")
+                    else:
+                        user_data = load_user_data()
+                        if new_user in user_data:
+                            st.error("Username already exists.")
+                        else:
+                            user_data[new_user] = new_pass
+                            if save_user_data(user_data):
+                                st.success("Account Created! You can now Login.")
+                                time.sleep(1)
+                            else:
+                                st.error("System Error. Please try again.")
+
+        # Guest Access Button
         if st.button("🔓 Continue as Guest", use_container_width=True):
             st.session_state.authenticated = True
             st.toast("Welcome! Accessing as Guest.")
